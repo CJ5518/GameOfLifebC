@@ -9,9 +9,13 @@ RAWOUT2 = rawOut2.bc
 $(BIN): $(SRC)
 	$(CC) $(SRC) > $(RAWOUT)
 	head -n -2 $(RAWOUT) > $(RAWOUT2) # Remove last two lines
-	sed '/SEMANTIC WARNING/d' $(RAWOUT2) > $(BIN) # Remove lines with warnings
+	sed '/SEMANTIC WARNING/d' $(RAWOUT2) > $(RAWOUT) # Remove lines with warnings
+	sed '/#DRBC/d' $(RAWOUT) > $(BIN) # Remove lines with DRBC headers
 
 test: $(BIN)
+	$(TM) $(BIN)
+
+run: $(BIN)
 	$(TM) $(BIN)
 
 clean:
