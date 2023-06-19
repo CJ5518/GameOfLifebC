@@ -5,9 +5,9 @@
 //Also there is no 'const' keyword or precompiler defs, so you have to change every instance of the 
 //Number 256 to change the size of the boards
 
-//Always read from readBoard, write to writeBoard
-int readBoard[256];
-int writeBoard[256];
+//Always read from readCells, write to writeCells
+int readCells[256];
+int writeCells[256];
 
 //Size of the board (that we care about)
 int xSize:5;
@@ -51,13 +51,63 @@ init() {
 
 	//Set boards to 0
 	for q=0 to 256 do {
-		readBoard[q] = 0;
-		writeBoard[q] = 0;
+		readCells[q] = 0;
+		writeCells[q] = 0;
 	}
+	
+	//Set up a line, basic test shape
+	readCells[coordToIdx(2,1)] = 1;
+	readCells[coordToIdx(2,2)] = 1;
+	readCells[coordToIdx(2,3)] = 1;
+}
 
+
+//Update a singular cell using state from readCells, and writes into writeCells
+updateCell(int idx) {
+	int neighborCount:0;
+	int x, y;
+	int out[2];
+
+	idxToCoord(idx, out);
+	x = out[0];
+	y = out[1];
+
+	//Entries are 0 or 1, so adding is fine
+	neighborCount += readCells[coordToIdx((x + 1) % xSize, (y + 1) % ySize)];
+	neighborCount += readCells[coordToIdx((x + 1) % xSize, (y + 0) % ySize)];
+	neighborCount += readCells[coordToIdx((x + 1) % xSize, (y - 1) % ySize)];
+
+	neighborCount += readCells[coordToIdx((x + 0) % xSize, (y + 1) % ySize)];
+	neighborCount += readCells[coordToIdx((x + 0) % xSize, (y - 1) % ySize)];
+
+	neighborCount += readCells[coordToIdx((x - 1) % xSize, (y + 1) % ySize)];
+	neighborCount += readCells[coordToIdx((x - 1) % xSize, (y + 0) % ySize)];
+	neighborCount += readCells[coordToIdx((x - 1) % xSize, (y - 1) % ySize)];
+
+	//If we are alive
+	if readCells[idx] == 1 then {
+		if neighborCount == 2 or neighborCount == 3 then {
+			writeCells[idx] = 1;
+		} else {
+			writeCells[idx] = 0;
+		}
+	} else {
+		//We are dead
+		if neighborCount == 3 then {
+			writeCells[idx] = 1;
+		} else {
+			writeCells[idx] = 0;
+		}
+	}
+}
+
+//Use state from readcells to update writeCells
+//Does not do any swapping
+update() {
+	int x, y;
 	for y=0 to ySize do {
 		for x=0 to xSize do {
-			readBoard[coordToIdx(x,y)] = boolToInt((x + y) % 2 == 1);
+			updateCell(coordToIdx(x,y));
 		}
 	}
 }
@@ -66,9 +116,9 @@ init() {
 swapBoards() {
 	//Arrays might be copied on assignment?
 	int temp[256];
-	temp = writeBoard;
-	writeBoard = readBoard;
-	readBoard = temp;
+	temp = writeCells;
+	writeCells = readCells;
+	readCells = temp;
 }
 
 //Prints a board
@@ -89,6 +139,13 @@ printBoard(int board[]) {
 main() {
 
 	init();
-	printBoard(readBoard);
+	while true do {
+		printBoard(readCells);
+		update();
+		swapBoards();
+		inputc();
+	}
+
+	output(-1 % 3);
 
 }
