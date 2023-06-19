@@ -1,0 +1,94 @@
+//Conway's game of life in bC
+//By Carson Rueber 2023
+
+//I don't think we can have an array of dynamic size, so we hard cap the number of cells at 256
+//Also there is no 'const' keyword or precompiler defs, so you have to change every instance of the 
+//Number 256 to change the size of the boards
+
+//Always read from readBoard, write to writeBoard
+int readBoard[256];
+int writeBoard[256];
+
+//Size of the board (that we care about)
+int xSize:5;
+int ySize:5;
+
+//Note that strings appear to not be null-terminated by default
+//So make sure you add a \0 to the end of everything you pass to this function
+//Or it will print garbage
+print(char str[]) {
+	int q:0;
+	while true do {
+		if (str[q] == '\0') then {
+			break;
+		} else {
+			outputc(str[q]);
+		}
+		q++;
+	}
+}
+
+int boolToInt(bool val) {
+	if val then {
+		return 1;
+	}
+	return 0;
+}
+
+int coordToIdx(int x; int y) {
+	return (y * xSize) + x;
+}
+
+//out[0] will be x, out[1] is y
+idxToCoord(int idx; int out[]) {
+	out[0] = idx % xSize;
+	out[1] = (idx - out[0]) / xSize;
+}
+
+
+init() {
+	int q:0;
+
+	//Set boards to 0
+	for q=0 to 256 do {
+		readBoard[q] = 0;
+		writeBoard[q] = 0;
+	}
+
+	for y=0 to ySize do {
+		for x=0 to xSize do {
+			readBoard[coordToIdx(x,y)] = boolToInt((x + y) % 2 == 1);
+		}
+	}
+}
+
+//Swaps the two boards
+swapBoards() {
+	//Arrays might be copied on assignment?
+	int temp[256];
+	temp = writeBoard;
+	writeBoard = readBoard;
+	readBoard = temp;
+}
+
+//Prints a board
+printBoard(int board[]) {
+	int x, y;
+	for y=0 to ySize do {
+		for x=0 to xSize do {
+			if board[coordToIdx(x,y)] != 0 then {
+				outputc('X');
+			} else {
+				outputc('_');
+			}
+		}
+		outnl();
+	}
+}
+
+main() {
+
+	init();
+	printBoard(readBoard);
+
+}
