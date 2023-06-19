@@ -10,7 +10,7 @@ int readCells[256];
 int writeCells[256];
 
 //Size of the board (that we care about)
-int xSize:5;
+int xSize:10;
 int ySize:5;
 
 //Note that strings appear to not be null-terminated by default
@@ -55,10 +55,12 @@ init() {
 		writeCells[q] = 0;
 	}
 	
-	//Set up a line, basic test shape
-	readCells[coordToIdx(2,1)] = 1;
-	readCells[coordToIdx(2,2)] = 1;
+	//Set up a glider, basic test shape
+	readCells[coordToIdx(3,1)] = 1;
+	readCells[coordToIdx(3,2)] = 1;
+	readCells[coordToIdx(3,3)] = 1;
 	readCells[coordToIdx(2,3)] = 1;
+	readCells[coordToIdx(1,2)] = 1;
 }
 
 
@@ -137,15 +139,21 @@ printBoard(int board[]) {
 }
 
 main() {
-
+	int ticksToGo:1;
+	int q:0;
 	init();
+
 	while true do {
-		printBoard(readCells);
-		update();
-		swapBoards();
-		inputc();
+		for q = 0 to ticksToGo do {
+			printBoard(readCells);
+			update();
+			swapBoards();
+			print("----------------------------------\0");
+			outnl();
+		}
+		ticksToGo = input();
+		if ticksToGo == 0 then {
+			return;
+		}
 	}
-
-	output(-1 % 3);
-
 }
