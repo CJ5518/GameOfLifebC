@@ -1,13 +1,13 @@
 //Conway's game of life in bC
 //By Carson Rueber 2023
 
-//I don't think we can have an array of dynamic size, so we hard cap the number of cells at 256
+//I don't think we can have an array of dynamic size, so we hard cap the number of cells at 512
 //Also there is no 'const' keyword or precompiler defs, so you have to change every instance of the 
-//Number 256 to change the size of the boards
+//Number 512 to change the size of the boards
 
 //Always read from readCells, write to writeCells
-int readCells[256];
-int writeCells[256];
+int readCells[512];
+int writeCells[512];
 
 //Size of the board (that we care about)
 int xSize:10;
@@ -16,6 +16,7 @@ int ySize:5;
 //Note that strings appear to not be null-terminated by default
 //So make sure you add a \0 to the end of everything you pass to this function
 //Or it will print garbage
+//Also using a \n seems to cause a seg fault? will look into it, just use outnl() for now
 print(char str[]) {
 	int q:0;
 	while true do {
@@ -26,6 +27,12 @@ print(char str[]) {
 		}
 		q++;
 	}
+}
+
+//Prints a line, because "\n" causes segfault on load for some reason
+println(char str[]) {
+	print(str);
+	outnl();
 }
 
 int boolToInt(bool val) {
@@ -50,17 +57,10 @@ init() {
 	int q:0;
 
 	//Set boards to 0
-	for q=0 to 256 do {
+	for q=0 to 512 do {
 		readCells[q] = 0;
 		writeCells[q] = 0;
 	}
-	
-	//Set up a glider, basic test shape
-	readCells[coordToIdx(3,1)] = 1;
-	readCells[coordToIdx(3,2)] = 1;
-	readCells[coordToIdx(3,3)] = 1;
-	readCells[coordToIdx(2,3)] = 1;
-	readCells[coordToIdx(1,2)] = 1;
 }
 
 
@@ -117,7 +117,7 @@ update() {
 //Swaps the two boards
 swapBoards() {
 	//Arrays might be copied on assignment?
-	int temp[256];
+	int temp[512];
 	temp = writeCells;
 	writeCells = readCells;
 	readCells = temp;
@@ -138,11 +138,21 @@ printBoard(int board[]) {
 	}
 }
 
-main() {
+//Loads a preset, no enum in this lang, just hardcode the numbers
+loadPreset(int preset) {
+	if preset == 0 then {
+		//Set up a glider
+		readCells[coordToIdx(3,1)] = 1;
+		readCells[coordToIdx(3,2)] = 1;
+		readCells[coordToIdx(3,3)] = 1;
+		readCells[coordToIdx(2,3)] = 1;
+		readCells[coordToIdx(1,2)] = 1;
+	}
+}
+
+doSimulation() {
 	int ticksToGo:1;
 	int q:0;
-	init();
-
 	while true do {
 		for q = 0 to ticksToGo do {
 			printBoard(readCells);
@@ -156,4 +166,94 @@ main() {
 			return;
 		}
 	}
+}
+
+//Handles the setup mode interface
+//Returns true if things worked out, false if the program needs to exit, quickly
+bool doSetupMode() {
+	int mode:0;
+	int x,y,state;
+	print("You are about to be asked for two integers, these are the x and y (width and height) of the board, respectively\0");
+	outnl();
+	print("Note that width * height CANNOT be >= 512\0");
+	outnl();
+	xSize = input();
+	ySize = input();
+
+	if xSize * ySize >= 512 then {
+		print("width and height are too big!\0");
+		outnl();
+		return false;
+	}
+
+	init();
+	print("Now all cells are dead, so you choose which ones are alive\0");
+	outnl();
+	while true do {
+		println("Commands:\0");
+		println("0: Change state of cell\0");
+		println("1: End editing and run the simulation\0");
+		mode = input();
+		if mode == 0 then {
+			// Enter coords
+			println("Enter X Coord of cell you want to edit\0");
+			x = input();
+			if x <= 0 or x >= xSize then {
+				println("ERROR: x was outside bounds, it has been set to 0\0");
+				x = 0;
+			}
+			println("Enter Y Coord of cell you want to edit\0");
+			y = input();
+			if y <= 0 or y >= ySize then {
+				println("ERROR: y was outside bounds, it has been set to 0\0");
+				y = 0;
+			}
+
+			// Enter cell state
+			println("Enter state of the cell you entered, 1 for alive, 0 for dead\0");
+			state = input();
+			if state != 0 and state != 1 then {
+				println("ERROR: state is not 0 or 1, the cell has been set to 1 for alive\0");
+				state = 1;
+			}
+			readCells[coordToIdx(x,y)] = state;
+		} else if mode == 1 then {
+			break;
+		}
+	}
+
+	return true;
+}
+
+main() {
+	int mode:0;
+	outnl();
+	print("Welcome to the game of life, enter 0 for default preset mode\0");
+	outnl();
+	print("Or type 1 for the interactive setup mode\0");
+	outnl();
+	outnl();
+	print("Once the simulation is running, you will be continuously asked for a number\0");
+	outnl();
+	print("The number is the number of ticks you'd like to run, I like to just type '1' then hit enter each time\0");
+	outnl();
+	outnl();
+
+	mode = input();
+	if mode == 0 then {
+		init();
+		loadPreset(0);
+	} else if mode == 1 then {
+		print("You have selected interactive setup mode, in this mode you will set up the whole simulation\0");
+		outnl();
+		if not doSetupMode() then {
+			return;
+		}
+	} else {
+		print("invalid mode\0");
+		outnl();
+	}
+
+	
+	doSimulation();
 }
